@@ -2,7 +2,7 @@ import type { Evidence, GraphStore, Page } from "../../src/index.js";
 import { FalkorDBStore, fromTables, ids, KuzuStore, SelfGraph, toJsonable } from "../../src/index.js";
 import { comparePy } from "../../src/internal/py.js";
 import { Extraction, parseOrThrow } from "../../src/models.js";
-import { tokens } from "../../src/retrieval.js";
+import { selectSeeds, tokens } from "../../src/retrieval.js";
 import { Schema, validateAgainstSchema } from "../../src/schema.js";
 import { expandTokens, schemaForms } from "../../src/terms.js";
 import { STORE_SPECS } from "../helpers.js";
@@ -364,9 +364,15 @@ export async function dump(graph: SelfGraph, ns: string): Promise<unknown> {
     const r = await termed.retrieve("which employers hired staff members named Hopper", { seeds: tier, depth: 0 });
     seeded[tier] = { seeds: r.seeds, tiers: r.tiers };
   }
+  const repeated = ["database:hydradb", "database:postgres"].map((id, index) => ({
+    ...entities.find((entity) => entity.id === id)!,
+    properties: { text: index ? "graph graph graph" : "graph" },
+    source_count: 0,
+  }));
   return toJsonable({
     answerable,
     retrieval_seeded: seeded,
+    retrieval_repeated: selectSeeds(repeated, tokens("graph"), 2).map(([entity, score]) => [entity.id, score]),
     tiers: termed.tiers,
     entities,
     relations,

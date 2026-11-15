@@ -5,7 +5,7 @@ import sys
 from datetime import datetime, timezone
 
 from selfgraph import EvidenceInput, Extraction, Schema, SelfGraph, ValidationError, ids
-from selfgraph.retrieval import _tokens
+from selfgraph.retrieval import _select_seeds, _tokens
 from selfgraph.runtime import to_jsonable
 from selfgraph.schema import validate_against_schema
 from selfgraph.terms import expand_tokens, schema_forms
@@ -347,10 +347,17 @@ async def dump(graph, ns):
         tier: await termed.retrieve("which employers hired staff members named Hopper", seeds=tier, depth=0)
         for tier in ("bm25", "synonyms")
     }
+    repeated = [
+        next(e for e in entities if e.id == eid).model_copy(
+            update={"properties": {"text": "graph graph graph" if index else "graph"}, "source_count": 0}
+        )
+        for index, eid in enumerate(("database:hydradb", "database:postgres"))
+    ]
     return to_jsonable(
         {
             "answerable": answerable,
             "retrieval_seeded": {tier: {"seeds": r.seeds, "tiers": r.tiers} for tier, r in seeded.items()},
+            "retrieval_repeated": [(e.id, score) for e, score in _select_seeds(repeated, _tokens("graph"), 2)],
             "tiers": termed.tiers,
             "entities": sorted(entities, key=lambda e: e.id),
             "relations": dict(sorted(relations.items())),

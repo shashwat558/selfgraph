@@ -104,6 +104,23 @@ def test_stopword_query_returns_nothing_and_an_empty_query_is_rejected():
             run(g.retrieve(query))
 
 
+def test_bm25_seed_ranking_counts_repeated_terms():
+    g = fresh_graph("bm25-frequency")
+    run(
+        g.insert.facts(
+            {
+                "entities": [
+                    {"type": "Topic", "name": "Alpha", "properties": {"text": "graph"}},
+                    {"type": "Topic", "name": "Beta", "properties": {"text": "graph graph graph"}},
+                ]
+            }
+        )
+    )
+    seeds = run(g.retrieve("graph", seeds="bm25", k=2, depth=0)).seeds
+    assert [seed.id for seed in seeds] == ["topic:beta", "topic:alpha"]
+    assert seeds[0].score > seeds[1].score
+
+
 def test_tiny_budgets_cut_to_fit_and_one_letter_names_seed():
     g = fresh_graph("q4")
     run(g.entities.create("A", "Person", id="person:a"))

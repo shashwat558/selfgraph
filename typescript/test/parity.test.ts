@@ -226,6 +226,16 @@ describe("retrieval ranking matches Python (NFC + casefold tokens, specificity, 
     }
   });
 
+  it("counts repeated terms when ranking BM25 seeds", () => {
+    const entities = [
+      storedEntity({ id: "topic:alpha", type: "Topic", name: "Alpha", properties: { text: "graph" } }),
+      storedEntity({ id: "topic:beta", type: "Topic", name: "Beta", properties: { text: "graph graph graph" } }),
+    ];
+    const ranked = selectSeeds(entities, tokens("graph"), 2);
+    expect(ranked.map(([entity]) => entity.id)).toEqual(["topic:beta", "topic:alpha"]);
+    expect(ranked[0]![1]).toBeGreaterThan(ranked[1]![1]);
+  });
+
   it("ranks by personalized PageRank", () => {
     for (const [name, c] of Object.entries(
       fx.ppr as Record<

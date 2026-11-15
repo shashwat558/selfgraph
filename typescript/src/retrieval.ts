@@ -197,7 +197,7 @@ function seedScores(
     const text = entityText(entity);
     let bm25 = 0;
     if (queryTokens.size) {
-      const doc = [...tokens(text)];
+      const doc = tokenList(text);
       const norm = BM25_K1 * (1 - BM25_B + (BM25_B * doc.length) / avgdl);
       for (const [t, f] of termCounts(queryTokens, doc)) bm25 += ((idf.get(t) ?? 0) * f * (BM25_K1 + 1)) / (f + norm);
     }
@@ -244,7 +244,7 @@ export function grepScore(terms: Set<string>, text: string): number {
 export function selectSeeds(entities: Entity[], queryTokens: Set<string>, k: number): Array<[Entity, number]> {
   const stats = corpusStats(
     queryTokens,
-    entities.map((e) => [...tokens(entityText(e))]),
+    entities.map((e) => tokenList(entityText(e))),
   );
   return bestSeeds(seedScores(entities, queryTokens, new Set(), stats), k);
 }
@@ -276,7 +276,7 @@ async function scanSeeds(
   for await (const page of entityPages(store, ns, asOf, valid)) {
     stats = corpusStats(
       queryTokens,
-      page.map((e) => [...tokens(entityText(e))]),
+      page.map((e) => tokenList(entityText(e))),
       stats,
     );
     pagesRead += 1;

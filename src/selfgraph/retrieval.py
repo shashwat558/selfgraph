@@ -264,7 +264,7 @@ def _seed_scores(
         text = _entity_text(entity)
         bm25 = 0.0
         if query_tokens:
-            doc = list(_tokens(text))
+            doc = _token_list(text)
             norm = _BM25_K1 * (1 - _BM25_B + _BM25_B * len(doc) / avgdl)
             tf = _term_counts(query_tokens, doc)
             bm25 = sum(idf[t] * f * (_BM25_K1 + 1) / (f + norm) for t, f in tf.items())
@@ -306,7 +306,7 @@ def _select_seeds(
     @param exact (set[str] | frozenset[str]): short query tokens that seed an entity whose whole name equals one.
     @return (list[tuple[Entity, float]]): seed entities with their scores, best first.
     """
-    stats = _corpus_stats(query_tokens, (list(_tokens(_entity_text(e))) for e in entities))
+    stats = _corpus_stats(query_tokens, (_token_list(_entity_text(e)) for e in entities))
     return heapq.nsmallest(k, _seed_scores(entities, query_tokens, exact, stats), key=_seed_rank)
 
 
@@ -338,7 +338,7 @@ async def _scan_seeds(
     pages_read = 0
     first: list[Entity] = []
     async for page in _entity_pages(graph, ns, as_of, valid):
-        stats = _corpus_stats(query_tokens, (list(_tokens(_entity_text(e))) for e in page), stats)
+        stats = _corpus_stats(query_tokens, (_token_list(_entity_text(e)) for e in page), stats)
         pages_read += 1
         first = page if pages_read == 1 else []
 
